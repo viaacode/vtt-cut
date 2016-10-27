@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <flow name="vtt-cutterFlow">
+        <amqp:inbound-endpoint
+			queueName="${rabbit.requestqueue}"
+			queueDurable="true"
+			connector-ref="RabbitMQConnector"
+			doc:name="AMQP-0-9"/>
+        
+        
+        <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object"/>
+        <set-variable variableName="correlationId" value="#[payload.correlationid]" doc:name="Set correlationId"/>
+        <set-variable variableName="start" value="#[payload.start]" doc:name="Set start"/>
+        <set-variable variableName="end" value="#[payload.end]" doc:name="Set end"/>
+        <set-variable variableName="data" value="#[payload.data]" doc:name="Set data"/>
+        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeXml(flowVars.data)]" doc:name="Set Payload"/>
+        <mulexml:dom-to-xml-transformer doc:name="DOM to XML"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:input-payload doc:sample="sample_data/empty.xml"/>
+            <dw:input-variable doc:sample="sample_data/MyPojo.dwl" variableName="start"/>
+            <dw:input-variable doc:sample="sample_data/MyPojo_1.dwl" variableName="end"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml skipNullOn="everywhere"
+%function toNumber (time) time replace ':' with ''
+---
+XIF @(version: '1.0', filename: payload.XIF.@filename): {
+	FileHeader: {
+		OriginatorSoftware @((payload.XIF.FileHeader.OriginatorSoftware.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.OriginatorSoftware,
+		GlobalFileInfo @((payload.XIF.FileHeader.GlobalFileInfo.@ mapObject {
+			'$$': (lookup('joinTimeFlow', flowVars.start)) when '$$' == 'StartTime' otherwise $
+		})): payload.XIF.FileHeader.GlobalFileInfo,
+		ReadingSpeeds @((payload.XIF.FileHeader.ReadingSpeeds.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.ReadingSpeeds,
+		Canvases @((payload.XIF.FileHeader.Canvases.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.Canvases,
+		FormattingInfo @((payload.XIF.FileHeader.FormattingInfo.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.FormattingInfo,
+		TimingStandards @((payload.XIF.FileHeader.TimingStandards.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.TimingStandards,
+		Fonts @((payload.XIF.FileHeader.Fonts.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.Fonts,
+		Colours @((payload.XIF.FileHeader.Colours.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.Colours,
+		Threads @((payload.XIF.FileHeader.Threads.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.Threads,
+		WordLists @((payload.XIF.FileHeader.WordLists.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.WordLists,
+		TxStreams @((payload.XIF.FileHeader.TxStreams.@ default {} mapObject { '$$': $ })): payload.XIF.FileHeader.TxStreams
+	},
+	FileBody:  {
+		ProgrammeBlock @((payload.XIF.FileBody.ProgrammeBlock.@ mapObject { '$$': $ })): payload.XIF.FileBody.ProgrammeBlock,
+		StoryBlock: payload.XIF.FileBody.StoryBlock,
+		(payload.XIF.FileBody.*ContentBlock map using (timeIn = toNumber($.ThreadedObject.TimingObject.TimeIn.@value), timeOut = toNumber($.ThreadedObject.TimingObject.TimeOut.@value), rawTimeIn = $.ThreadedObject.TimingObject.TimeIn.@value, rawTimeOut = $.ThreadedObject.TimingObject.TimeOut.@value) {
+			ContentBlock: ($) when (timeIn >= flowVars.start and timeOut <= flowVars.end) otherwise null
+		})
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-payload value="#[payload.replace(&quot;&lt;?xml version='1.0' encoding='UTF-8'?&gt;\n&quot;, &quot;&quot;)]" doc:name="Remove &lt;?xml&gt; tag at start"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	correlationid: flowVars.correlationId,
+	data: payload
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <amqp:outbound-endpoint queueName="${rabbit.xiftovtt.requestqueue}" responseTimeout="10000" exchange-pattern="request-response" connector-ref="RabbitMQConnector" doc:name="AMQP-0-9"/>
+    </flow>
+    <flow name="joinTimeFlow">
+        <set-variable variableName="pattern" value="#[&quot;([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})&quot;]" doc:name="Set pattern"/>
+        <set-payload value="#[java.util.regex.Pattern.compile(flowVars.pattern).matcher(payload)]" doc:name="Match input with regex"/>
+        <expression-component doc:name="Execute matches()"><![CDATA[payload.matches()]]></expression-component>
+        <set-variable variableName="hours" value="#[payload.group(1)]" doc:name="Set hours"/>
+        <set-variable variableName="minutes" value="#[payload.group(2	)]" doc:name="Set minutes"/>
+        <set-variable variableName="seconds" value="#[payload.group(3)]" doc:name="Set seconds"/>
+        <set-variable variableName="milliseconds" value="#[payload.group(4)]" doc:name="Set milliseconds"/>
+        <set-payload value="#[String.format(&quot;%s:%s:%s:%s&quot;, flowVars.hours, flowVars.minutes, flowVars.seconds, flowVars.milliseconds)]" doc:name="Set Payload"/>
+    </flow>
+</mule>

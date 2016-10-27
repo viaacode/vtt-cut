@@ -1,0 +1,10 @@
+################
+### RabbitMQ ###
+################
+	rabbit.host=
+	rabbit.port=
+	rabbit.username=
+	rabbit.password=
+	rabbit.virtualhost=
+	rabbit.requestqueue=
+	rabbit.xiftovtt.requestqueue=
