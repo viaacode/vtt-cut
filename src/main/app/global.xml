@@ -9,5 +9,5 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
     <context:property-placeholder location="${mule.env}.properties"/>
-    <amqp:connector name="RabbitMQConnector" validateConnections="true" host="${rabbit.host}" port="${rabbit.port}" virtualHost="${rabbit.virtualhost}" username="${rabbit.username}" password="${rabbit.password}" ackMode="MULE_AUTO" prefetchCount="1" doc:name="AMQP-0-9 Connector"></amqp:connector>
+    <amqp:connector name="RabbitMQConnector" validateConnections="true" host="${rabbit.host}" port="${rabbit.port}" virtualHost="${rabbit.virtualhost}" username="${rabbit.username}" password="${rabbit.password}" ackMode="MANUAL" prefetchCount="1" doc:name="AMQP-0-9 Connector"></amqp:connector>
 </mule>

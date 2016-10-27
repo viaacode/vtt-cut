@@ -7,4 +7,4 @@
 	rabbit.password=
 	rabbit.virtualhost=
 	rabbit.requestqueue=
-	rabbit.xiftovtt.requestqueue=
+	rabbit.responsequeue=
