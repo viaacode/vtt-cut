@@ -23,7 +23,10 @@ Where the numbers are: hours, minutes, seconds and hundreths of a second respect
 The response will be posted on the response queue using the following format:
 ```
 {
-	"correlationid": "correlationid0",
-	"data": "&lt;XIF version=&quot;1.0&quot;&gt;&lt;/XIF&gt;"
+	"response": {
+		"correlationid": "correlationid0",
+		"status": "OK",
+		"data": "&lt;XIF version=&quot;1.0&quot;&gt;&lt;/XIF&gt;"
+	}
 }
 ```
