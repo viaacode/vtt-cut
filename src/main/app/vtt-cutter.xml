@@ -53,7 +53,7 @@ XIF @(version: '1.0', filename: payload.XIF.@filename): {
 		ProgrammeBlock @((payload.XIF.FileBody.ProgrammeBlock.@ mapObject { '$$': $ })): payload.XIF.FileBody.ProgrammeBlock,
 		StoryBlock: payload.XIF.FileBody.StoryBlock,
 		(payload.XIF.FileBody.*ContentBlock map using (timeIn = toNumber($.ThreadedObject.TimingObject.TimeIn.@value), timeOut = toNumber($.ThreadedObject.TimingObject.TimeOut.@value), rawTimeIn = $.ThreadedObject.TimingObject.TimeIn.@value, rawTimeOut = $.ThreadedObject.TimingObject.TimeOut.@value) {
-			ContentBlock: ($) when (timeIn >= flowVars.start and timeOut <= flowVars.end) otherwise null
+		ContentBlock: ($) when (timeOut >= flowVars.start and timeIn <= flowVars.end) otherwise null
 		})
 	}
 }]]></dw:set-payload>
