@@ -1,0 +1,7 @@
+staging.properties
+production.properties
+.classpath
+.project
+.settings
+target/*
+
