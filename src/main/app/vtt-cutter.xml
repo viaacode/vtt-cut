@@ -55,7 +55,7 @@ XIF @(version: '1.0', filename: payload.XIF.@filename): {
 	FileBody:  {
 		ProgrammeBlock @((payload.XIF.FileBody.ProgrammeBlock.@ mapObject { '$$': $ })): payload.XIF.FileBody.ProgrammeBlock,
 		StoryBlock: payload.XIF.FileBody.StoryBlock,
-		(payload.XIF.FileBody.*ContentBlock map using (timeIn = toNumber((($.ThreadedObject.TimingObject.TimeIn.@value) as :string)[0 .. 1] ++ ':00:00:00'), timeOut = toNumber($.ThreadedObject.TimingObject.TimeOut.@value), rawTimeIn = $.ThreadedObject.TimingObject.TimeIn.@value, rawTimeOut = $.ThreadedObject.TimingObject.TimeOut.@value) {
+		(payload.XIF.FileBody.*ContentBlock map using (timeIn = toNumber($.ThreadedObject.TimingObject.TimeIn.@value), timeOut = toNumber($.ThreadedObject.TimingObject.TimeOut.@value), rawTimeIn = $.ThreadedObject.TimingObject.TimeIn.@value, rawTimeOut = $.ThreadedObject.TimingObject.TimeOut.@value) {
 			ContentBlock: ($) when (timeOut >= flowVars.start and timeIn <= flowVars.end) otherwise null
 		})
 	}
