@@ -21,13 +21,13 @@ http://www.mulesoft.org/schema/mule/amqps http://www.mulesoft.org/schema/mule/am
         </amqp:inbound-endpoint>
         
         
-        <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object"/>
+        <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object" encoding="UTF-16LE"/>
         <set-variable variableName="correlationId" value="#[payload.correlationid]" doc:name="Set correlationId"/>
         <set-variable variableName="start" value="#[payload.start]" doc:name="Set start"/>
         <set-variable variableName="end" value="#[payload.end]" doc:name="Set end"/>
         <set-variable variableName="data" value="#[payload.data]" doc:name="Set data"/>
-        <set-payload value="#[flowVars.data]" doc:name="Set Payload"/>
-        <mulexml:dom-to-xml-transformer doc:name="DOM to XML" mimeType="application/xml"/>
+        <set-payload value="#[flowVars.data]" doc:name="Set Payload" encoding="UTF-16LE" mimeType="application/xml"/>
+        <mulexml:dom-to-xml-transformer doc:name="DOM to XML" mimeType="application/xml" encoding="UTF-16LE" outputEncoding="UTF-16LE"/>
         <dw:transform-message doc:name="Cut XIF">
             <dw:input-payload doc:sample="sample_data/empty.xml"/>
             <dw:input-variable doc:sample="sample_data/MyPojo.dwl" variableName="start"/>
@@ -61,7 +61,7 @@ XIF @(version: '1.0', filename: payload.XIF.@filename): {
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String" encoding="UTF-16LE"/>
         <set-payload value="#[payload.replace(&quot;&lt;?xml version='1.0' encoding='UTF-8'?&gt;\n&quot;, &quot;&quot;)]" doc:name="Remove &lt;?xml&gt; tag at start"/>
         <dw:transform-message doc:name="Transform Message">
             <dw:set-payload><![CDATA[%dw 1.0
@@ -75,7 +75,7 @@ XIF @(version: '1.0', filename: payload.XIF.@filename): {
 	}
 }]]></dw:set-payload>
         </dw:transform-message>
-        <amqp:outbound-endpoint queueName="${rabbit.responsequeue}" responseTimeout="10000"  connector-ref="RabbitMQConnector" doc:name="AMQP-0-9"/>
+        <amqp:outbound-endpoint queueName="${rabbit.responsequeue}" responseTimeout="10000"  connector-ref="RabbitMQConnector" doc:name="AMQP-0-9" queueDurable="true"/>
         <amqp:acknowledge-message doc:name="AMQP-0-9 Acknowledge Message"/>
                 <catch-exception-strategy doc:name="Catch Exception Strategy">
             <logger message="An exception was thrown while cutting this VTT" level="ERROR" doc:name="Logger"/>
